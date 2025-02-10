@@ -69,6 +69,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground transition-colors duration-1000;
+    @apply bg-background text-foreground transition-colors;
   }
 }
