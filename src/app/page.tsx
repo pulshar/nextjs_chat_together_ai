@@ -4,15 +4,24 @@ import Tooltip from "@/app/components/Tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { Loader, SendHorizontalIcon, XIcon } from "lucide-react";
-import { FormEvent, useState } from "react";
+import {
+  Disc3Icon,
+  Loader,
+  MicIcon,
+  SendHorizontalIcon,
+  XIcon,
+} from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ChatCompletionStream } from "together-ai/lib/ChatCompletionStream";
+import useVoiceRecognition from "./hooks/useVoiceRecognition";
 
 export default function Chat() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [status, setStatus] = useState<"idle" | "pending" | "done">("idle");
+
+  const { isSpeechActive, textSpeech, handleOnRecord } = useVoiceRecognition();
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,6 +40,12 @@ export default function Chat() {
       .on("end", () => setStatus("done"));
   }
 
+  useEffect(() => {
+    if (textSpeech) {
+      setQuestion(textSpeech);
+    }
+  }, [textSpeech]);
+
   return (
     <div className="mx-auto flex w-full max-w-3xl grow flex-col px-4">
       {status === "idle" ? (
@@ -44,7 +59,7 @@ export default function Chat() {
           >
             <Input
               variant="lg"
-              className="h-[54px] rounded-md sm:rounded-full pr-[5.5rem]"
+              className="h-[54px] rounded-md pr-[5.5rem] sm:rounded-full"
               placeholder="Ask me a question"
               autoFocus
               name="prompt"
@@ -52,23 +67,41 @@ export default function Chat() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
             />
-
-            <Button
-              className="absolute right-2 sm:right-2.5 top-1/2 h-10 w-16 -translate-y-1/2 rounded-md sm:rounded-full"
-              type="submit"
-              size="icon"
-            >
-              <SendHorizontalIcon />
-              <span className="sr-only">Send question</span>
-            </Button>
+            {question ? (
+              <Button
+                className="absolute right-2 top-1/2 h-10 w-16 -translate-y-1/2 rounded-md sm:right-2.5 sm:rounded-full"
+                type="submit"
+                size="icon"
+              >
+                <SendHorizontalIcon />
+                <span className="sr-only">Send question</span>
+              </Button>
+            ) : (
+              <Tooltip text={isSpeechActive ? "Recording" : "Use voice mode"}>
+                <Button
+                  onClick={handleOnRecord}
+                  variant={isSpeechActive ? "destructive" : "brand"}
+                  className="absolute right-2 top-1/2 h-10 w-16 -translate-y-1/2 rounded-md sm:right-2.5 sm:rounded-full"
+                  type="button"
+                  size="icon"
+                >
+                  {isSpeechActive ? (
+                    <Disc3Icon className="animate-spin" />
+                  ) : (
+                    <MicIcon />
+                  )}
+                  <span className="sr-only">Record question</span>
+                </Button>
+              </Tooltip>
+            )}
           </form>
         </div>
       ) : (
         <>
           <div className="mt-12">
             <div className="flex justify-end">
-              <div className="flex max-w-[70ch] justify-between gap-4 rounded-md bg-muted px-5 py-2.5 sm:items-center sm:rounded-3xl animate-slideIn">
-                <p className="text-brand text-right">{question}</p>
+              <div className="flex max-w-[70ch] animate-slideIn justify-between gap-4 rounded-md bg-muted px-5 py-2.5 sm:items-center sm:rounded-3xl">
+                <p className="text-right text-brand">{question}</p>
                 <Tooltip text="Ask another question">
                   <Button
                     size="icon"
@@ -93,11 +126,13 @@ export default function Chat() {
             <ReactMarkdown className="prose dark:prose-invert">
               {answer}
             </ReactMarkdown>
-            <div className={`mt-12 ${status === "pending" ? "hidden" : "flex"}`}>
+            <div
+              className={`mt-12 ${status === "pending" ? "hidden" : "flex"}`}
+            >
               <Button
                 variant="brand"
                 size="lg"
-                className="rounded-md sm:rounded-3xl ml-auto group w-full sm:w-auto"
+                className="group ml-auto w-full rounded-md sm:w-auto sm:rounded-3xl"
                 disabled={status === "pending"}
                 onClick={() => {
                   setQuestion("");
@@ -106,7 +141,7 @@ export default function Chat() {
                 }}
               >
                 Ask another question
-                <SendHorizontalIcon className="group-hover:translate-x-2 transition-transform" />
+                <SendHorizontalIcon className="transition-transform group-hover:translate-x-2" />
               </Button>
             </div>
           </div>
