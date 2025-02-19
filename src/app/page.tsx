@@ -77,7 +77,7 @@ export default function Chat() {
                 <span className="sr-only">Send question</span>
               </Button>
             ) : (
-              <Tooltip text={isSpeechActive ? "Recording" : "Use voice mode"}>
+              <Tooltip text={isSpeechActive ? "Recording voice" : "Use voice mode"}>
                 <Button
                   onClick={handleOnRecord}
                   variant={isSpeechActive ? "destructive" : "brand"}
