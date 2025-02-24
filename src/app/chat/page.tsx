@@ -1,65 +1,23 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SendHorizontalIcon } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useChatStore } from "@/store/store";
+import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import Together from "together-ai";
-import { ChatCompletionStream } from "together-ai/lib/ChatCompletionStream";
-import LoadingDots from "../components/LoadingDots";
+import SendButton from "../components/chat/SendButton";
+import VoiceButton from "../components/chat/VoiceButton";
 
 export default function Chat() {
-  const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<
-    Together.Chat.Completions.CompletionCreateParams.Message[]
-  >([]);
-  const [isPending, setIsPending] = useState(false);
+  const question = useChatStore((state) => state.question);
+  const status = useChatStore((state) => state.status);
+  const setQuestion = useChatStore((state) => state.setQuestion);
+  const messages = useChatStore((state) => state.messages);
+  const handleSubmit = useChatStore((state) => state.handleSubmitChat);
+  const resetChat = useChatStore((state) => state.resetChat);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    setPrompt("");
-    setIsPending(true);
-    setMessages((messages) => [
-      ...messages,
-      {
-        role: "user",
-        content: prompt,
-      },
-    ]);
-
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        messages: [
-          ...messages,
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      }),
-    });
-
-    if (!res.body) return;
-
-    ChatCompletionStream.fromReadableStream(res.body)
-      .on("content", (delta, content) => {
-        setMessages((messages) => {
-          const lastMessage = messages.at(-1);
-
-          if (lastMessage?.role !== "assistant") {
-            return [...messages, { role: "assistant", content }];
-          } else {
-            return [...messages.slice(0, -1), { ...lastMessage, content }];
-          }
-        });
-      })
-      .on("end", () => {
-        setIsPending(false);
-      });
-  }
+  useEffect(() => {
+    resetChat();
+  }, [resetChat]);
 
   return (
     <>
@@ -68,7 +26,7 @@ export default function Chat() {
           {messages.map((message, i) => (
             <div key={i} className="flex">
               {message.role === "user" ? (
-                <div className="ml-auto mt-8 mb-2 rounded-md sm:rounded-3xl bg-muted px-5 py-3 text-brand text-right animate-slideIn">
+                <div className="mb-2 ml-auto mt-8 animate-slideIn rounded-md bg-muted px-5 py-3 text-right text-brand sm:rounded-3xl">
                   {message.content}
                 </div>
               ) : (
@@ -81,7 +39,7 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="mb-12 flex justify-center animate-slideIn">
+      <div className="mb-12 flex animate-slideIn justify-center">
         <form
           onSubmit={handleSubmit}
           className="flex w-full max-w-3xl px-4 lg:pl-0"
@@ -89,21 +47,18 @@ export default function Chat() {
           <fieldset className="relative w-full">
             <Input
               variant="lg"
-              className="h-[54px] rounded-md sm:rounded-full pr-[5.5rem]"
+              className="h-[54px] rounded-md pr-[5.5rem] sm:rounded-full"
               autoFocus
               placeholder="Send a message"
               required
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
             />
-            <Button
-              className="absolute right-2 sm:right-2.5 top-1/2 h-10 w-16 -translate-y-1/2 rounded-md sm:rounded-full"
-              type="submit"
-              disabled={isPending}
-            >
-              {isPending ? <LoadingDots /> : <SendHorizontalIcon />}
-              <span className="sr-only">Start chatting</span>
-            </Button>
+            {question || status === "pending" ? (
+              <SendButton />
+            ) : (
+              <VoiceButton />
+            )}
           </fieldset>
         </form>
       </div>

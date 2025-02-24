@@ -1,8 +1,9 @@
+import { useChatStore } from "@/store/store";
 import { useRef, useState } from "react";
 
 function useVoiceRecognition() {
+  const setQuestion = useChatStore((state) => state.setQuestion);
   const recognitionRef = useRef<SpeechRecognition>();
-  const [textSpeech, setTextSpeech] = useState("");
   const [isSpeechActive, setIsSpeechActive] = useState(false);
 
   function handleOnRecord() {
@@ -25,14 +26,13 @@ function useVoiceRecognition() {
     };
     recognitionRef.current.onresult = async function (event) {
       const transcript = event.results[0][0].transcript;
-      setTextSpeech(transcript);
+      setQuestion(transcript);
     };
     recognitionRef.current.start();
   }
 
   return {
     handleOnRecord,
-    textSpeech,
     isSpeechActive,
   };
 }

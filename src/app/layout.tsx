@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import { ThemeProvider } from "./components/ThemeProvider";
 import "./globals.css";
+import ErrorMessage from "./components/ErrorMessage";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,7 +39,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Header />
-          <main className="flex grow flex-col">{children}</main>
+            <main className="flex grow flex-col">{children}</main>
+            
+            <ErrorMessage/>
           <Footer />
         </ThemeProvider>
       </body>
